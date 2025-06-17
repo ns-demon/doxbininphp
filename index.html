@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DOXBIN Viewer</title>
+<style>
+  body {
+    background-color: #121212;
+    color: #eee;
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 10px;
+  }
+  a {
+    color: #66ccff;
+    margin-right: 10px;
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  h1 {
+    margin-top: 20px;
+  }
+  .verified, .ssn, .rip, .mail {
+    margin: 5px 0;
+    padding: 6px 10px;
+    background-color: #222;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  textarea {
+    width: 100%;
+    height: 300px;
+    background-color: #303030;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 14px;
+    resize: vertical;
+  }
+  .error {
+    color: #ff5555;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Post Dox</a>
+  <a href="doxviewer.html">Back to the archive</a>
+  <a href="proscription.html">Proscription List</a>
+</nav>
+
+<div id="content">
+  <p>Loading...</p>
+</div>
+
+<script>
+// Helper to get URL param "dox"
+function getDoxParam() {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('dox') || '';
+}
+
+// Basic sanitization: no dots, slashes to prevent directory traversal
+function sanitizeFilename(name) {
+  if (!name) return '';
+  if (name.includes('.') || name.includes('/') || name.toLowerCase().includes('%2f')) {
+    return '';
+  }
+  return name;
+}
+
+// Fetch a text file and return text or null if 404
+async function fetchTextFile(path) {
+  try {
+    const resp = await fetch(path);
+    if (!resp.ok) return null;
+    return await resp.text();
+  } catch (e) {
+    return null;
+  }
+}
+
+async function loadDox() {
+  const doxRaw = getDoxParam();
+  const filename = sanitizeFilename(doxRaw);
+  const contentDiv = document.getElementById('content');
+  if (!filename) {
+    contentDiv.innerHTML = '<p class="error">Invalid or missing "dox" parameter in URL.</p>';
+    return;
+  }
+
+  // Fetch main dox file
+  const doxContent = await fetchTextFile(`dox/${filename}.txt`);
+  if (!doxContent) {
+    contentDiv.innerHTML = `<p class="error">Dox file <code>dox/${filename}.txt</code> not found.</p>`;
+    return;
+  }
+
+  // Fetch optional verification files
+  const verified = await fetchTextFile(`img/verification/${filename}.txt`);
+  const ssn = await fetchTextFile(`img/ssn/${filename}.txt`);
+  const rip = await fetchTextFile(`img/rip/${filename}.txt`);
+  const mail = await fetchTextFile(`img/mail/${filename}.txt`);
+
+  // Build HTML output
+  let html = `<h1>${filename}</h1><hr />`;
+  if (verified) html += `<div class="verified">${verified.trim()}</div>`;
+  if (ssn) html += `<div class="ssn">${ssn.trim()}</div>`;
+  if (rip) html += `<div class="rip">${rip.trim()}</div>`;
+  if (mail) html += `<div class="mail">${mail.trim()}</div>`;
+
+  html += `<textarea readonly>${doxContent}</textarea>`;
+
+  contentDiv.innerHTML = html;
+}
+
+// Run on page load
+window.addEventListener('DOMContentLoaded', loadDox);
+</script>
+
+</body>
+</html>
