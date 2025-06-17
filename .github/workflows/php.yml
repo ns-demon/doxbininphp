@@ -1,0 +1,31 @@
+name: PHP Workflow
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  php-run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'  # specify your PHP version here
+
+    - name: Run PHP version
+      run: php -v
+
+    # Optional: run your PHP script or tests
+    - name: Run PHP script
+      run: php your-script.php
+      # Replace "your-script.php" with your actual PHP file name
+
+    # Optional: Run PHPUnit tests if you have them
+    # - name: Run tests
+    #   run: vendor/bin/phpunit
